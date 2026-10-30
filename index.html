@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0a6b5d" />
+  <title>LiburanYuk – Temukan Wisata yang Cocok Buat Kamu</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+  <link rel="stylesheet" href="css/style.css" />
+
+  <!-- Tailwind v4 (browser build): token tema -->
+  <style type="text/tailwindcss">
+    @theme {
+      --color-teal: #0a6b5d;
+      --color-sun: #ffc83d;
+      --color-coral: #ff7a59;
+      --font-display: "Lexend", sans-serif;
+      --font-body: "Plus Jakarta Sans", sans-serif;
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+</head>
+<body class="font-body">
+
+  <!-- ============ LOADING OVERLAY ============ -->
+  <div class="loader" id="loader" role="status" aria-live="polite">
+    <div class="loader-stage">
+      <!-- Taruh GIF kamu di assets/img/traveling.gif. Kalau belum ada, SVG animasi di bawah dipakai. -->
+      <img class="loader-gif" id="loaderGif" src="assets/img/traveling.gif" alt="Traveler sedang berjalan" />
+      <svg class="loader-svg hidden" id="loaderSvg" viewBox="0 0 200 140" aria-hidden="true">
+        <line class="road" x1="0" y1="124" x2="200" y2="124" />
+        <g class="walker">
+          <circle cx="100" cy="42" r="11" fill="#ffd9a8" />
+          <path d="M89 40a11 11 0 0 1 22 0z" fill="#ff8a2b" />
+          <rect x="90" y="54" width="20" height="36" rx="8" fill="#1f6b4a" />
+          <rect x="78" y="56" width="14" height="28" rx="6" fill="#ff8a2b" />
+          <line class="leg l1" x1="96" y1="88" x2="96" y2="122" />
+          <line class="leg l2" x1="104" y1="88" x2="104" y2="122" />
+        </g>
+      </svg>
+    </div>
+    <p class="loader-title">Siap-siap berangkat…</p>
+    <div class="loader-bar"><span id="loaderBar"></span></div>
+  </div>
+
+  <!-- ============ HEADER ============ -->
+  <header class="site-header" id="siteHeader">
+    <a class="brand" href="#beranda" aria-label="LiburanYuk beranda">
+      <i class="fa-solid fa-suitcase-rolling"></i>
+      <span>Liburan<span class="brand-light">Yuk</span></span>
+    </a>
+    <nav class="main-nav" id="mainNav" aria-label="Navigasi utama">
+      <a class="nav-link" href="#beranda"><i class="fa-solid fa-house"></i> Beranda</a>
+      <a class="nav-link" href="#jelajahi"><i class="fa-solid fa-compass"></i> Jelajahi</a>
+      <a class="nav-link" href="#rekomendasi"><i class="fa-solid fa-sliders"></i> Rekomendasi</a>
+      <a class="nav-link" href="#tentang"><i class="fa-solid fa-circle-info"></i> Tentang SAW</a>
+      <a class="nav-link nav-cta" href="#rekomendasi">Mulai memilih <i class="fa-solid fa-arrow-right"></i></a>
+    </nav>
+    <a class="header-cta" href="#rekomendasi">Mulai memilih <i class="fa-solid fa-arrow-right"></i></a>
+    <button class="menu-toggle" id="menuToggle" aria-label="Buka menu" aria-expanded="false" aria-controls="mainNav"><span></span><span></span><span></span></button>
+  </header>
+
+  <main>
+    <!-- ============ HERO ============ -->
+    <section class="hero" id="beranda">
+      <div class="section-wrap hero-grid">
+        <div class="hero-copy">
+          <p class="hero-kicker"><i class="fa-solid fa-location-dot"></i> Wisata Jawa Barat</p>
+          <h1>Liburan yang pas, <span class="h1-accent">dompet tetap aman.</span></h1>
+          <p class="hero-description">Bandingkan biaya, kenyamanan, dan pengalaman. Atur prioritasmu, lalu lihat destinasi mana yang paling cocok.</p>
+          <div class="hero-actions">
+            <a class="btn btn-sun" href="#rekomendasi">Cari wisata yang cocok <i class="fa-solid fa-wand-magic-sparkles"></i></a>
+            <a class="text-link" href="#jelajahi">Lihat destinasi <i class="fa-solid fa-arrow-down"></i></a>
+          </div>
+          <ul class="hero-chips">
+            <li><i class="fa-solid fa-map-location-dot"></i> 7 destinasi</li>
+            <li><i class="fa-solid fa-list-check"></i> 8 kriteria</li>
+            <li><i class="fa-solid fa-calculator"></i> Metode SAW</li>
+          </ul>
+        </div>
+        <aside class="hero-picks" aria-label="Destinasi pilihan">
+          <p class="hero-picks-title">Destinasi pilihan</p>
+          <div class="pick-list" id="heroPicks"></div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- ============ PENCARIAN CEPAT ============ -->
+    <section class="section-wrap quick-search" aria-label="Pencarian cepat">
+      <h2 class="quick-title">Rencanakan versi liburanmu</h2>
+      <label class="quick-field"><i class="fa-solid fa-map-pin"></i><span><small>Area destinasi</small>
+        <select id="areaFilter"><option value="all">Semua Jawa Barat</option><option value="Bandung">Bandung &amp; sekitarnya</option><option value="Ciwidey">Ciwidey</option><option value="Bogor">Bogor</option><option value="Garut">Garut</option></select></span></label>
+      <label class="quick-field"><i class="fa-solid fa-wallet"></i><span><small>Budget total per orang</small>
+        <select id="budgetFilter"><option value="all">Bebas</option><option value="75000">Maks. Rp75.000</option><option value="125000">Maks. Rp125.000</option><option value="200000">Maks. Rp200.000</option></select></span></label>
+      <button class="btn btn-primary" id="quickFind">Temukan wisata <i class="fa-solid fa-magnifying-glass"></i></button>
+    </section>
+
+    <!-- ============ JELAJAHI ============ -->
+    <section class="section-wrap section-pad" id="jelajahi">
+      <div class="section-heading">
+        <div><h2>Inspirasi buat kabur sejenak</h2><p>Kenali pilihanmu dulu, lalu bandingkan dengan cara yang lebih terukur.</p></div>
+        <div class="flex items-center gap-3">
+          <span class="result-count" id="resultCount">7 destinasi</span>
+          <div class="carousel-controls"><button id="scrollLeft" aria-label="Geser ke kiri"><i class="fa-solid fa-chevron-left"></i></button><button id="scrollRight" aria-label="Geser ke kanan"><i class="fa-solid fa-chevron-right"></i></button></div>
+        </div>
+      </div>
+      <div class="category-row" id="categoryRow">
+        <button class="category-chip selected" data-category="all">Semua</button>
+        <button class="category-chip" data-category="Alam"><i class="fa-solid fa-tree"></i> Alam</button>
+        <button class="category-chip" data-category="Keluarga"><i class="fa-solid fa-people-roof"></i> Keluarga</button>
+        <button class="category-chip" data-category="Edukasi"><i class="fa-solid fa-graduation-cap"></i> Edukasi</button>
+        <button class="category-chip" data-category="Petualangan"><i class="fa-solid fa-person-hiking"></i> Petualangan</button>
+      </div>
+      <div class="destination-grid" id="destinationGrid"></div>
+      <div class="text-center mt-8"><button class="btn btn-outline" id="showAll">Reset filter <i class="fa-solid fa-rotate-left"></i></button></div>
+    </section>
+
+    <!-- ============ MESIN SAW ============ -->
+    <section class="decision-section" id="rekomendasi">
+      <div class="section-wrap decision-layout">
+        <div class="decision-intro">
+          <h2>Yang terbaik itu yang cocok buatmu</h2>
+          <p>Pilih seberapa penting tiap hal buatmu. Sistem menghitung ulang peringkat destinasi setiap kali kamu menekan tombol hitung.</p>
+          <div class="decision-note"><i class="fa-solid fa-hand-holding-heart"></i><div><strong>Kontrol tetap di tanganmu</strong><small>Ubah pilihan kapan saja, ranking menyesuaikan.</small></div></div>
+          <div class="weight-total"><div><span>Tingkat prioritas total</span><strong id="weightTotal">56 / 80 poin</strong></div><div class="weight-bar"><span id="weightBar"></span></div><small>Otomatis dinormalisasi saat dihitung.</small></div>
+        </div>
+
+        <div class="preference-panel">
+          <div class="panel-top"><div><h3>Apa yang penting buatmu?</h3><small>Beri nilai 1–10 untuk tiap kriteria. 1 = tidak penting, 10 = sangat penting.</small></div><button class="reset-btn" id="resetWeights"><i class="fa-solid fa-rotate-left"></i> Reset</button></div>
+          <div class="preset-row" role="group" aria-label="Preset preferensi">
+            <button class="preset-btn active" data-preset="balanced"><i class="fa-solid fa-scale-balanced"></i> Seimbang</button>
+            <button class="preset-btn" data-preset="cheap"><i class="fa-solid fa-piggy-bank"></i> Hemat</button>
+            <button class="preset-btn" data-preset="comfort"><i class="fa-solid fa-couch"></i> Nyaman</button>
+            <button class="preset-btn" data-preset="nature"><i class="fa-solid fa-mountain-sun"></i> Pemandangan</button>
+          </div>
+          <div id="weightControls" class="weight-controls"></div>
+          <div class="budget-toggle">
+            <label class="switch-label"><input type="checkbox" id="useBudget" /><span class="switch"></span><span><strong>Batasi anggaran</strong><small>Sembunyikan destinasi di atas budget</small></span></label>
+            <label class="budget-input-wrap" for="maxBudget">Maks. total / orang <span><b>Rp</b><input id="maxBudget" type="number" min="0" step="5000" value="100000" disabled /></span></label>
+          </div>
+          <button class="btn btn-sun calculate-btn" id="calculateBtn">Hitung rekomendasi <i class="fa-solid fa-calculator"></i></button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ HASIL ============ -->
+    <section class="section-wrap section-pad" id="hasil">
+      <div class="section-heading">
+        <div><h2>Ini yang paling masuk akal</h2><p id="resultSubtitle">Atur preferensi lalu hitung untuk melihat ranking.</p></div>
+        <button class="btn btn-outline" id="compareSelected" disabled>Bandingkan pilihan <i class="fa-solid fa-code-compare"></i></button>
+      </div>
+      <div id="resultSummary"></div>
+      <div class="results-table-wrap">
+        <div class="table-heading"><div><strong>Rincian perhitungan</strong><small>Dari skor awal sampai nilai akhir.</small></div><button class="table-toggle" id="toggleTable">Tampilkan tabel <i class="fa-solid fa-chevron-down"></i></button></div>
+        <div id="calculationTable" class="calculation-table hidden"></div>
+      </div>
+    </section>
+
+    <!-- ============ TENTANG SAW ============ -->
+    <section class="section-wrap section-pad" id="tentang">
+      <div class="how-heading"><h2>Bagaimana sistem memilih?</h2><p>Memakai Simple Additive Weighting (SAW), metode pengambilan keputusan multikriteria.</p></div>
+      <ol class="steps-grid">
+        <li class="step-card"><i class="fa-solid fa-list-check"></i><h3>1. Tentukan kriteria</h3><p>Biaya, fasilitas, keindahan, kebersihan, keamanan, akses, aktivitas, dan kenyamanan.</p></li>
+        <li class="step-card"><i class="fa-solid fa-arrows-left-right-to-line"></i><h3>2. Normalisasi nilai</h3><p>Cost: nilai terkecil dibagi nilai alternatif. Benefit: nilai alternatif dibagi nilai terbesar.</p></li>
+        <li class="step-card"><i class="fa-solid fa-plus-minus"></i><h3>3. Hitung nilai akhir</h3><p>Nilai normalisasi dikali bobot, lalu dijumlahkan jadi skor preferensi.</p></li>
+        <li class="step-card"><i class="fa-solid fa-ranking-star"></i><h3>4. Urutkan</h3><p>Destinasi diurutkan dari skor tertinggi dan berubah sesuai bobotmu.</p></li>
+      </ol>
+    </section>
+
+    <section class="section-wrap closing-cta">
+      <div><h2>Liburan nggak harus mahal. Yang penting paling cocok.</h2><p>Atur prioritasmu, bandingkan pilihanmu, lalu tentukan perjalananmu sendiri.</p></div>
+      <a href="#rekomendasi" class="btn btn-sun">Cari rekomendasi <i class="fa-solid fa-arrow-up-right-from-square"></i></a>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <a class="brand" href="#beranda"><i class="fa-solid fa-suitcase-rolling"></i><span>Liburan<span class="brand-light">Yuk</span></span></a>
+    <p>Rekomendasi cerdas, keputusan tetap milikmu.</p>
+    <div><span>Proyek UTS SPK · Metode SAW</span><span>Data demonstrasi, verifikasi sebelum bepergian</span></div>
+  </footer>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <div class="modal-backdrop hidden" id="modalBackdrop" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal"><button class="modal-close" id="modalClose" aria-label="Tutup"><i class="fa-solid fa-xmark"></i></button><div id="modalContent"></div></div>
+  </div>
+
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
