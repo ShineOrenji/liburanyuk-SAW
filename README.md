@@ -1,165 +1,102 @@
-# LiburanYuk – Sistem Pendukung Keputusan Wisata (Metode SAW)
+# LiburanYuk – Rekomendasi Wisata Jawa Barat (Metode SAW)
 
-Website statis untuk merekomendasikan destinasi wisata di Jawa Barat berdasarkan prioritas pengguna, dihitung dengan **Simple Additive Weighting (SAW)**. Tanpa backend dan tanpa database; semua perhitungan berjalan di browser.
+Website statis (HTML + CSS + JS tanpa build). Cukup buka `index.html` di browser, atau jalankan server lokal:
 
-> Semua harga dan skor adalah **data simulasi** untuk keperluan akademik. Verifikasi ke sumber resmi sebelum bepergian.
-
----
-
-## 1. Teknologi
-
-| Teknologi | Dipakai untuk |
-|---|---|
-| HTML5 | Struktur halaman |
-| CSS vanilla (`css/style.css`) | Styling komponen kompleks: loader, hero, navbar, pemilih bobot, modal, responsif |
-| Tailwind CSS v4 (CDN browser build) | Token tema (`@theme`) dan utility layout cepat di HTML |
-| Font Awesome 6 (CDN) | Seluruh ikon |
-| JavaScript vanilla | Logika SAW, render kartu, modal, navbar, loader |
-| Google Fonts | Lexend (judul) dan Plus Jakarta Sans (teks) |
-
-Karena memakai CDN, **butuh koneksi internet** saat membuka website.
-
----
-
-## 2. Struktur folder
+## Struktur folder
 
 ```
-liburanyuk/
-├── index.html            # Markup + token tema Tailwind + importmap Three.js
-├── README.md
-├── css/
-│   └── style.css         # Seluruh styling vanilla, dibagi 13 bagian bernomor
-├── js/
-│   ├── data.js           # Data destinasi, kriteria, preset bobot, skala bobot
-│   └── app.js            # Logika SAW, render UI, modal, navbar, loader
-└── assets/
-    └── img/
-        └── traveling.gif # GIF loading milikmu (taruh di sini)
+index.html            Markup halaman (hero, filter, bobot, hasil, tentang SAW, footer)
+css/style.css         Seluruh gaya (token warna ada di :root di bagian atas)
+js/data.js            DATA: daftar destinasi, kriteria, preset bobot
+js/app.js             Logika: render kartu, perhitungan SAW, modal, animasi scroll
+assets/img/fox.png Maskot rubah (hero, loading, CTA penutup)
+assets/img/hero-bg.jpg Foto latar sisi kanan hero
 ```
 
-Urutan script di `index.html`: `data.js` → `app.js`. `data.js` dan `app.js` memakai variabel global bersama.
+---
+
+## 1. Mengganti gambar
+
+### a. Maskot rubah
+Timpa `assets/img/rubah.webp` dengan gambar baru **berlatar transparan** (webp/png).
+Kalau pakai PNG, ubah ekstensinya di 3 tempat di `index.html` (cari `rubah.webp`): loading, hero, dan CTA penutup.
+Tips: tinggi 900–1000 px sudah cukup, ukuran file di bawah 100 KB agar loading cepat.
+
+### b. Latar kanan hero
+Timpa `assets/img/hero-bg.jpg` (disarankan 1600×900, warna terang/pudar supaya teks tetap terbaca).
+Gambar ini dipakai di `css/style.css` pada aturan `.hero` (`background: ... url("../assets/img/hero-bg.jpg")`).
+
+### c. Foto destinasi
+Foto tiap destinasi ada di properti `image` pada `js/data.js`. Dua cara:
+
+**Pakai file sendiri (disarankan, lebih cepat & stabil)**
+1. Simpan foto di `assets/img/destinasi/`, mis. `kawah-putih.jpg` (lebar 900 px, kompres < 150 KB).
+2. Ubah datanya:
+   ```js
+   image: "assets/img/destinasi/kawah-putih.jpg"
+   ```
+
+**Pakai URL online**
+```js
+image: "https://images.unsplash.com/photo-xxxx?auto=format&fit=crop&w=900&q=80" 
+```
+Kalau gambar gagal dimuat, otomatis tampil gambar pengganti (placeholder).
 
 ---
 
-## 3. Cara menjalankan
+## 2. Menambah destinasi baru
 
-1. Buka folder `liburanyuk` di VS Code.
-2. Install ekstensi **Live Server**, klik kanan `index.html` → *Open with Live Server*.
-
-Jangan membuka `index.html` langsung dengan klik dua kali (`file://`). Sebagian fitur browser dibatasi di protokol itu. Alternatif tanpa VS Code: jalankan `python -m http.server 8000` di folder proyek, lalu buka `http://localhost:8000`.
-
----
-
-## 4. Fitur
-
-- **Loading overlay** dengan GIF traveling dan progress bar. Hilang setelah halaman siap (minimal 1,5 detik, maksimal menunggu 9 detik).
-- **Hero** berupa foto alam dengan overlay gradasi hijau toska di belakang heading, serta kartu "Destinasi pilihan" yang bisa diklik untuk melihat detail.
-- **Navbar pintar**: tersembunyi saat scroll ke bawah, muncul lagi begitu scroll ke atas sedikit. Menu aktif ikut berubah sesuai bagian yang sedang dilihat.
-- **Hamburger mobile** beranimasi: tiga garis berubah jadi X, panel menu membuka dengan efek lingkaran dan link muncul berurutan. Tutup dengan tombol X, tekan Esc, atau pilih salah satu menu.
-- **Filter** destinasi berdasarkan kategori, area, dan budget.
-- **Mesin SAW** dengan bobot **1–10** per kriteria, 4 preset, dan batas anggaran opsional.
-- **Hasil**: 3 teratas, tabel rincian (nilai mentah, normalisasi, kontribusi), detail destinasi, dan perbandingan 2–3 destinasi.
-- **Favorit** (disimpan selama halaman terbuka).
-- **Responsif** mobile, tablet, dan desktop. Menghormati pengaturan `prefers-reduced-motion`.
-
----
-
-## 5. Cara kerja SAW
-
-1. **Bobot**: pengguna memberi nilai 1–10 untuk tiap kriteria. Bobot dinormalisasi: `w' = w / Σw`.
-2. **Normalisasi** matriks keputusan:
-   - Cost (C1 total biaya): `r = min(x) / x`
-   - Benefit (C2–C8): `r = x / max(x)`
-3. **Nilai preferensi**: `Vi = Σ (w'j × rij)`.
-4. **Peringkat**: destinasi diurutkan dari nilai tertinggi. Skor ditampilkan sebagai `Vi × 10` (skala /10).
-
-Kriteria: C1 total biaya (cost), C2 fasilitas, C3 keindahan, C4 kebersihan, C5 keamanan, C6 aksesibilitas, C7 variasi aktivitas, C8 kenyamanan (semua benefit). Total biaya = tiket + parkir + makan + transportasi + biaya tambahan.
-
----
-
-## 6. Panduan mengubah isi
-
-### Menambah destinasi
-Buka `js/data.js`, tambahkan objek baru di array `destinations`:
+Buka `js/data.js`, lalu tambahkan satu objek baru di dalam array `destinations` (jangan lupa koma antar objek):
 
 ```js
-{id:"nama-unik", name:"Nama Wisata", location:"Kecamatan, Kabupaten", area:"Bandung",
- category:"Alam", desc:"Deskripsi singkat.", image:"https://...jpg",
- ticket:30000, parking:10000, food:30000, transport:20000, extra:5000,
- facility:8, beauty:9, cleanliness:8, safety:8, access:7, activities:8, comfort:8}
+{
+  id: "tangkuban-perahu",           // unik, huruf kecil, tanpa spasi
+  name: "Tangkuban Parahu",
+  location: "Lembang, Kabupaten Bandung Barat",
+  area: "Bandung",                  // harus sama dengan salah satu opsi filter wilayah
+  category: "Alam",                 // harus sama dengan salah satu chip kategori
+  desc: "Kawah gunung berapi dengan udara sejuk dan jalur wisata mudah.",
+  image: "assets/img/destinasi/tangkuban-perahu.jpg",
+
+  // Biaya per orang (Rupiah) – dijumlahkan jadi kriteria C1 (Total biaya)
+  ticket: 30000, parking: 10000, food: 30000, transport: 25000, extra: 5000,
+
+  // Skor 1–10 (makin tinggi makin baik)
+  facility: 7, beauty: 9, cleanliness: 7, safety: 8,
+  access: 8, activities: 6, comfort: 7
+},
 ```
 
-- `area` harus salah satu: `Bandung`, `Ciwidey`, `Bogor`, `Garut` (atau tambah opsi baru di `<select id="areaFilter">` pada `index.html`).
-- `category` harus salah satu: `Alam`, `Keluarga`, `Edukasi`, `Petualangan` (atau tambah chip baru di `#categoryRow`).
-- Nilai kualitas memakai skala 1–10, biaya dalam rupiah.
+Semua field di atas **wajib diisi**, kalau ada yang kosong nilai SAW bisa jadi `NaN`.
 
-### Mengganti foto hero
-Foto hero diatur di bagian 6 `css/style.css` (aturan `.hero`, properti `background`, URL `url("https://images.unsplash.com/...")`). Ganti dengan URL lain atau foto lokal, misalnya `url("../assets/img/hero.jpg")`. Pakai foto lanskap terang berukuran minimal 1600 px. Gradasi hijau toska di atasnya menjaga teks tetap terbaca.
+### Kalau wilayah atau kategorinya baru
+Filter wilayah dan chip kategori ditulis manual di `index.html`, jadi tambahkan juga di sana:
 
-### Mengganti destinasi pilihan di hero
-Daftar tiga id destinasi ada di fungsi `renderHeroPicks` pada `js/app.js`.
+- **Wilayah baru**: cari `<select id="areaFilter">`, tambah
+  `<option value="Cianjur">Cianjur</option>` (nilai `value` harus sama persis dengan `area` di data).
+- **Kategori baru**: cari `id="categoryRow"`, salin salah satu tombol chip dan ubah
+  `data-category="Kuliner"` serta teksnya (harus sama persis dengan `category` di data).
+- **Teks "7 destinasi"** pada statistik hero (`.hero-stats`) diketik manual, sesuaikan jumlahnya.
 
-### Mengubah preset bobot
-Edit objek `presets` di `js/data.js`. Urutan angka: biaya, fasilitas, keindahan, kebersihan, keamanan, akses, aktivitas, kenyamanan. Nilai harus 1–10.
-
-### Mengubah skala bobot
-Ubah `MAX_WEIGHT` di `js/data.js`. Pemilih angka dan perhitungan menyesuaikan otomatis (di CSS, `.score-group` memakai `repeat(10, 1fr)`, sesuaikan angkanya).
-
-### Mengganti warna dan font
-- Palet: toska `--teal`, kuning matahari `--sun`, koral `--coral`, hijau daun `--leaf`, dengan latar putih kebiruan `--mist` dan `--sky`. Ubah di `:root` pada bagian 1 `css/style.css` dan token `@theme` di `index.html`.
-- Font: ubah link Google Fonts di `<head>` dan `--font-display` / `--font-body`.
+Kartu, hasil ranking, perbandingan, dan modal detail akan otomatis ikut memakai data baru.
 
 ---
 
-## 7. Mengganti GIF loading
+## 3. Mengubah kriteria, bobot awal, dan warna
 
-1. Simpan GIF sebagai `assets/img/traveling.gif`.
-2. Selesai. Kalau nama berbeda, ubah atribut `src` pada `<img id="loaderGif">` di `index.html`.
-
-Bila file GIF tidak ditemukan, loader otomatis memakai animasi SVG bawaan. Ukuran tampilan diatur lewat `.loader-stage` di `css/style.css` (bagian 4). Usahakan GIF di bawah 1 MB agar cepat muncul.
-
----
-
-## 8. Perilaku navbar
-
-Logika ada di `js/app.js` (blok "Navbar"):
-
-- Di dekat atas halaman (< 80 px): navbar selalu tampil.
-- Scroll turun lebih dari 6 px: navbar sembunyi (class `nav-hidden`).
-- Scroll naik lebih dari 4 px: navbar muncul lagi.
-- Saat menu mobile terbuka: navbar tidak pernah disembunyikan dan scroll halaman dikunci.
-
-Angka ambang batas bisa diubah langsung di kode tersebut.
+- **Kriteria** (`criteria` di `data.js`): `attribute` bernilai `"Cost"` (makin kecil makin baik) atau `"Benefit"` (makin besar makin baik).
+  Menambah kriteria baru juga perlu field baru di tiap destinasi, ikonnya di `CRITERIA_ICONS`, dan menyesuaikan perhitungan di `app.js`.
+- **Preset bobot** (`presets` di `data.js`): urutan angkanya mengikuti urutan kriteria
+  (biaya, fasilitas, keindahan, kebersihan, keamanan, akses, aktivitas, kenyamanan), skala 1–10.
+- **Warna**: ubah token di `:root` pada `css/style.css`
+  - `--sun` oranye utama (`#f69335`), `--teal` / `--teal-deep` hijau olive untuk teks.
+  - `--peach` / `--cream` warna latar section.
+- **Font**: diatur lewat link Google Fonts di `<head>` `index.html` dan variabel `--font-display` / `--font-body`.
 
 ---
 
-## 9. Breakpoint responsif
+## 4. Catatan
 
-| Lebar layar | Perubahan utama |
-|---|---|
-| > 960 px | Layout desktop penuh, navbar horizontal |
-| ≤ 960 px | Hamburger aktif, hero dan mesin SAW menjadi satu kolom, grid 2 kolom |
-| ≤ 620 px | Satu kolom, tombol penuh lebar, kartu destinasi 84% lebar (geser horizontal), modal tampil seperti bottom sheet |
-| ≤ 380 px | Angka pemilih bobot dan judul hero diperkecil |
-
-Di layar kecil, kartu "Destinasi pilihan" pada hero menjadi baris yang bisa digeser horizontal.
-
----
-
-## 10. Pemecahan masalah
-
-| Masalah | Penyebab dan solusi |
-|---|---|
-| Loading tidak selesai | Loader menunggu maksimal 9 detik lalu menutup sendiri. Periksa koneksi internet (CDN). |
-| GIF tidak tampil | Pastikan nama file `assets/img/traveling.gif`. Animasi SVG dipakai sebagai cadangan. |
-| Gaya Tailwind tidak jalan | Script Tailwind CDN gagal dimuat. Periksa koneksi internet. |
-| Foto destinasi kosong | URL gambar Unsplash gagal dimuat, gambar pengganti otomatis tampil. |
-| Hero tampil hijau polos tanpa foto | Foto Unsplash gagal dimuat. Periksa internet atau ganti dengan foto lokal. |
-
----
-
-## 11. Catatan
-
-- Tidak ada penyimpanan permanen. Preferensi dan favorit hilang saat halaman dimuat ulang.
-- Biaya pungutan liar tidak diasumsikan atau dituduhkan pada destinasi mana pun.
-- Proyek UTS Sistem Pendukung Keputusan, metode SAW.
+- Data biaya dan skor adalah **data demonstrasi**, bukan harga resmi. Verifikasi sebelum dipakai sungguhan.
+- Setelah mengubah `data.js`, cukup refresh browser (tekan Ctrl+F5 jika masih tampil data lama).
+- Agar tetap ringan: kompres foto, gunakan webp/jpg, dan hindari menambah animasi yang berjalan terus-menerus.

@@ -30,12 +30,7 @@ function renderDestinations(){
     </article>`).join("") || `<div class="no-results">Tidak ada destinasi yang cocok dengan filter tersebut. Coba ubah kategori, area, atau budget.</div>`;
   $$("[data-favorite]").forEach(b=>b.addEventListener("click",()=>{const id=b.dataset.favorite;favorites.has(id)?favorites.delete(id):favorites.add(id);renderDestinations();showToast(favorites.has(id)?"Ditambahkan ke favorit":"Dihapus dari favorit");}));
   $$("[data-detail]").forEach(b=>b.addEventListener("click",()=>openDetail(b.dataset.detail)));
-  
-}
-function renderHeroPicks(){
-  const picks=["kawah-putih","orchid-forest","situ-patenggang"].map(id=>destinations.find(d=>d.id===id)).filter(Boolean);
-  $("#heroPicks").innerHTML=picks.map(d=>`<button class="pick-card" data-detail="${d.id}">${safeImage(d.image,d.name)}<span><strong>${d.name}</strong><small><i class="fa-solid fa-location-dot"></i> ${d.location.split(",")[0]}</small><em>${rupiah(totalCost(d))} / orang</em></span></button>`).join("");
-  $$("#heroPicks [data-detail]").forEach(b=>b.addEventListener("click",()=>openDetail(b.dataset.detail)));
+  observeReveal($("#destinationGrid"));
 }
 function renderWeights(){
   weights = weights.map(w => Math.max(1, Math.min(MAX_WEIGHT, Number(w) || 1)));
@@ -52,6 +47,7 @@ function renderWeights(){
     setActivePreset(null);
   }));
   updateWeightTotal();
+  observeReveal($("#weightControls"));
 }
 function updateWeightTotal(){
   const total=weights.reduce((a,b)=>a+b,0), max=criteria.length*MAX_WEIGHT;
@@ -119,7 +115,7 @@ function renderResults(){
   $$("[data-compare]").forEach(b=>b.addEventListener("click",()=>toggleComparison(b.dataset.compare)));
   $("#compareSelected").disabled=comparison.size<2;
   renderCalculationTable();
-  
+  observeReveal($("#resultSummary"));
 }
 function renderCalculationTable(){
   if(!lastResults.length)return;
@@ -181,7 +177,7 @@ function renderCompareTable(){
 }
 function closeModal(){ $("#modalBackdrop").classList.add("hidden"); }
 function init(){
-  renderHeroPicks();renderDestinations();renderWeights();renderResults();
+  renderDestinations();renderWeights();renderResults();
   $$(".preset-btn").forEach(b=>b.addEventListener("click",()=>applyPreset(b.dataset.preset)));
   $("#resetWeights").addEventListener("click",()=>applyPreset("balanced"));
   $("#calculateBtn").addEventListener("click",calculateSAW);
@@ -237,12 +233,10 @@ function hideLoader(){
   const loader = $("#loader");
   if (loader.classList.contains("done")) return;
   $("#loaderBar").style.width = "100%";
+  document.body.classList.add("ready");
   setTimeout(()=>loader.classList.add("done"), 350);
 }
 function initLoader(){
-  // GIF belum ada? pakai animasi SVG bawaan.
-  const gif = $("#loaderGif");
-  gif.addEventListener("error", ()=>{gif.classList.add("hidden"); $("#loaderSvg").classList.remove("hidden");});
   let progress = 10; const tick = setInterval(()=>{progress=Math.min(progress+8,90); $("#loaderBar").style.width=progress+"%";},200);
   const pageReady = new Promise(r=>addEventListener("load",r,{once:true}));
   const minTime = new Promise(r=>setTimeout(r,1500));
@@ -250,3 +244,33 @@ function initLoader(){
   Promise.race([Promise.all([pageReady,minTime]), timeout]).then(()=>{clearInterval(tick);hideLoader();});
 }
 initLoader();
+addEventListener("load",()=>observeReveal(document));
+
+/* Reveal saat scroll: elemen muncul satu per satu (stagger per batch) */
+var revealIO;
+function observeReveal(root=document){
+  if(!("IntersectionObserver" in window)||matchMedia("(prefers-reduced-motion: reduce)").matches)return;
+  revealIO=revealIO||new IntersectionObserver(es=>{
+    let i=0;
+    es.filter(e=>e.isIntersecting).sort((a,b)=>a.boundingClientRect.top-b.boundingClientRect.top||a.boundingClientRect.left-b.boundingClientRect.left).forEach(e=>{
+      const el=e.target, d=Math.min(i++,7)*110;
+      el.style.transitionDelay=d+"ms"; el.classList.add("in"); revealIO.unobserve(el);
+      setTimeout(()=>{el.classList.remove("reveal","in"); el.style.transitionDelay="";},d+900);
+    });
+  },{rootMargin:"0px 0px -6% 0px",threshold:.08});
+  $$(".section-heading,.how-heading,.quick-search,.destination-card,.category-row,.decision-intro > *,.panel-top,.preset-row,.weight-card,.budget-toggle,.calculate-btn,.empty-results,.result-card,.results-table-wrap,.step-card,.formula-card,.closing-cta > div",root).forEach(el=>{
+    if(el.dataset.rv)return; el.dataset.rv="1"; el.classList.add("reveal"); revealIO.observe(el);
+  });
+}
+
+/* Pita LiburanYuk: isi teks berulang + jalan hanya saat terlihat (hemat CPU) */
+(()=>{
+  const icons=["plane","location-dot","mountain-sun","camera","compass"];
+  $$(".tape").forEach((t,k)=>{
+    const half=Array.from({length:14},(_,i)=>`<span>LiburanYuk</span><i class="fa-solid fa-${icons[(i+k)%5]}"></i>`).join("");
+    t.innerHTML=`<div class="tape-track"><div>${half}</div><div>${half}</div></div>`;
+  });
+  if(!("IntersectionObserver" in window)){$$(".tape").forEach(t=>t.classList.add("on"));return;}
+  const io=new IntersectionObserver(es=>es.forEach(e=>e.target.classList.toggle("on",e.isIntersecting)),{rootMargin:"120px"});
+  $$(".tape").forEach(t=>io.observe(t));
+})();
